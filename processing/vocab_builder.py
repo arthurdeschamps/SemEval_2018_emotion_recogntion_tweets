@@ -1,5 +1,6 @@
 import numpy as np
 from defs import TRAIN_SET_PATH, DEV_SET_PATH
+from processing.processing_pipeline import ProcessingPipeline
 
 
 def extract_vocabulary(data_path=TRAIN_SET_PATH):
@@ -10,7 +11,11 @@ def extract_vocabulary(data_path=TRAIN_SET_PATH):
         usecols=[1],
         skiprows=1
     )
-    print(df)
+    pipeline = ProcessingPipeline.standard_pipeline(df)
+    pipeline.process()
+    pipeline.build_vocabulary()
+    pipeline.print_processed_dataset()
+    print(pipeline.vocabulary)
 
 
 extract_vocabulary(DEV_SET_PATH)
