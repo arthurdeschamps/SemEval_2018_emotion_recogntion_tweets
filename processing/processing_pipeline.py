@@ -1,13 +1,16 @@
 import processing.operators as ops
+from data.embedders import OneHotEncoder
 
 
 class ProcessingPipeline:
 
-    def __init__(self, dataset, *operators):
+    def __init__(self, dataset, *operators, embedder=OneHotEncoder):
         super(ProcessingPipeline, self).__init__()
         self.dataset = dataset
         self.operators = list(operators)
+        self.embedder = embedder()
         self.processed_tweets = None
+        self.embeddings = None
         self.vocabulary = None
 
     def process(self):
@@ -20,6 +23,12 @@ class ProcessingPipeline:
         for operator in self.operators:
             tweet = operator(tweet)
         return tweet
+
+    def embed(self):
+        embeddings = []
+        for tweet_tokens in self.processed_tweets:
+            embeddings.append(self.embedder.embed(tweet_tokens))
+        self.embeddings = embeddings
 
     def build_vocabulary(self):
         vocab = {}
