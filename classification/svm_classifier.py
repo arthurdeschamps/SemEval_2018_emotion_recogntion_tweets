@@ -14,6 +14,9 @@ class SVMClassifier(BaseClassifier):
             estimator=svm.SVC(C=1.0, gamma='scale', kernel='rbf', class_weight='balanced', verbose=True)
         )
 
+    def get_classifier_name(self) -> str:
+        return "SVM Classifier"
+
     def get_classifier_for_grid_search(self):
         return MultiOutputClassifier(svm.SVC())
 
@@ -27,5 +30,4 @@ class SVMClassifier(BaseClassifier):
         }
 
 
-#SVMClassifier(debug_mode=False).fit()
-SVMClassifier().perform_grid_search()
+SVMClassifier(debug_mode=False, scale_data=False).fit()

@@ -10,8 +10,16 @@ class RandomForest(BaseClassifier):
 
     def get_classifier(self):
         return MultiOutputClassifier(
-            estimator=RandomForestClassifier(class_weight='balanced')
+            estimator=RandomForestClassifier(
+                class_weight='balanced',
+                n_estimators=100,
+                criterion='gini',
+                max_features='sqrt'
+            )
         )
+
+    def get_classifier_name(self) -> str:
+        return "Random Forest Classifier"
 
     def get_classifier_for_grid_search(self):
         return MultiOutputClassifier(RandomForestClassifier())
@@ -28,4 +36,4 @@ class RandomForest(BaseClassifier):
         }
 
 
-RandomForest().perform_grid_search()
+RandomForest(debug_mode=False, scale_data=False).fit()

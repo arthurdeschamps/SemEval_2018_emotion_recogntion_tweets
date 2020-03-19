@@ -192,3 +192,5 @@ SemEval2018-Task1-all-data
 
 processed_data
 !processed_data/vocabulary.txt
+
+venv

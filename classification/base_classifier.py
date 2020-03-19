@@ -2,7 +2,7 @@ from abc import ABC
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import f1_score, classification_report
+from sklearn.metrics import f1_score, classification_report, multilabel_confusion_matrix
 from data.dataset_loader import DatasetLoader
 from processing.processing_pipeline import ProcessingPipeline
 from data.stats import show_labels_stats
@@ -13,9 +13,11 @@ class BaseClassifier(ABC):
     Class to extend to build new classifiers.
     """
 
-    def __init__(self, *args, debug_mode=False, **kwargs):
+    def __init__(self, *args, scale_data=False, debug_mode=False, **kwargs):
         """
-        :debug_mode if true, uses the dev set instead of the train set for training this model.
+        :scale_data If true, scales the data to mean 0 and variance 1. In practice, it seems that the performance are
+        better without scaling.
+        :debug_mode If true, uses the dev set instead of the train set for training this model.
         """
         super(BaseClassifier, self).__init__(*args, **kwargs)
 
@@ -28,10 +30,11 @@ class BaseClassifier(ABC):
         self.test_embeddings, self.test_labels = BaseClassifier._prepare_data(DatasetLoader.load_testing_set())
         self.dev_embeddings, self.dev_labels = BaseClassifier._prepare_data(DatasetLoader.load_development_set())
 
-        self.scaler = StandardScaler()
-        self.train_embeddings = self.scaler.fit_transform(self.train_embeddings)
-        self.test_embeddings = self.scaler.transform(self.test_embeddings)
-        self.dev_embeddings = self.scaler.transform(self.dev_embeddings)
+        if scale_data:
+            self.scaler = StandardScaler()
+            self.train_embeddings = self.scaler.fit_transform(self.train_embeddings)
+            self.test_embeddings = self.scaler.transform(self.test_embeddings)
+            self.dev_embeddings = self.scaler.transform(self.dev_embeddings)
 
     def fit(self):
         """
@@ -42,6 +45,7 @@ class BaseClassifier(ABC):
         preds = classifier.predict(self.test_embeddings)
         self.report_performance(preds)
         self.report_prediction_stats(preds)
+        self.plot_confusion_matrix(preds)
 
     def perform_grid_search(self):
         clf = GridSearchCV(
@@ -55,6 +59,12 @@ class BaseClassifier(ABC):
     def get_classifier(self):
         """
         Must return a classifier which implements the fit(data, labels) and predict(data) methods.
+        """
+        raise NotImplementedError()
+
+    def get_classifier_name(self) -> str:
+        """
+        Name of the classifier.
         """
         raise NotImplementedError()
 
@@ -92,6 +102,20 @@ class BaseClassifier(ABC):
         print(classification_report(y_true, y_pred))
         print()
 
+    def plot_confusion_matrix(self, predictions):
+        binary_confusion_matrices = multilabel_confusion_matrix(self.test_labels, predictions)
+        print(f"{self.get_classifier_name()} - Confusion Matrix")
+        emotions = ["Anger", "Anticipation", "Disgust", "Fear", "Joy", "Love", "Optimism", "Pessimism", "Sadness",
+                    "Surprise", "Trust"]
+        for i in range(len(emotions)):
+            conf_mat = binary_confusion_matrices[i]
+            print(f"{emotions[i]}")
+            print("| Positive | Negative |")
+            print("|:---------:|:-------:|")
+            print(f"| {conf_mat[0][0]} | {conf_mat[0][1]} |")
+            print(f"| {conf_mat[1][0]} | {conf_mat[1][1]} |")
+            print()
+
     def report_performance(self, predictions):
         print(f"Accuracy: {self.jaccard_index(predictions)}")
         print(f"F1-score micro: {self.micro_f1(predictions)}")
@@ -106,7 +130,8 @@ class BaseClassifier(ABC):
             y_pred = predictions[pred_ind]
             intersection_size = sum(1 if y_pred[i] == y_true[i] == 1 else 0 for i in range(len(y_pred)))
             union_size = sum(1 if (y_pred[i] == 1) or (y_true[i] == 1) else 0 for i in range(len(y_pred)))
-            jaccard_score += intersection_size / (union_size * len(self.test_labels))
+            if intersection_size > 0:
+                jaccard_score += intersection_size / (union_size * len(self.test_labels))
         return jaccard_score
 
     def micro_f1(self, y_pred):
@@ -124,5 +149,5 @@ class BaseClassifier(ABC):
         tweets, emotions = dataset
         data_pipeline = ProcessingPipeline.standard_pipeline(tweets)
         data_pipeline.process()
-        data_pipeline.get_feature_vector()
+        data_pipeline.embed()
         return data_pipeline.embeddings, emotions
