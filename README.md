@@ -11,6 +11,8 @@ The following pre-processing steps were performed on the dataset:
 ## Models
 We tried two different models: an SVM classifier using the radial basis function as its kernel and a random forest with 100 estimators.
 
+As for the word embeddings, we settled on one-hot encodings, using the ~2000 most frequent words as features.
+
 ## Results
 
 ### Performance Metrics
