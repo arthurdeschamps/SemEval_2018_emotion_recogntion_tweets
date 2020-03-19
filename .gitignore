@@ -189,3 +189,6 @@ dmypy.json
 SemEval2018-Task1-all-data
 
 *.model
+
+processed_data
+!processed_data/vocabulary.txt

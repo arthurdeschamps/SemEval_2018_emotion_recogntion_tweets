@@ -1,14 +1,22 @@
+from abc import ABC
+
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import jaccard_score, f1_score, classification_report
+from sklearn.metrics import f1_score, classification_report
 from data.dataset_loader import DatasetLoader
 from processing.processing_pipeline import ProcessingPipeline
 from data.stats import show_labels_stats
 
 
-class BaseClassifier:
+class BaseClassifier(ABC):
+    """
+    Class to extend to build new classifiers.
+    """
 
     def __init__(self, *args, debug_mode=False, **kwargs):
+        """
+        :debug_mode if true, uses the dev set instead of the train set for training this model.
+        """
         super(BaseClassifier, self).__init__(*args, **kwargs)
 
         if debug_mode:
@@ -26,6 +34,9 @@ class BaseClassifier:
         self.dev_embeddings = self.scaler.transform(self.dev_embeddings)
 
     def fit(self):
+        """
+        Call this method to train the classifier and report performances.
+        """
         classifier = self.get_classifier()
         classifier.fit(self.train_embeddings, self.train_labels)
         preds = classifier.predict(self.test_embeddings)
@@ -42,9 +53,16 @@ class BaseClassifier:
         BaseClassifier._print_grid_search_results(clf, self.test_embeddings, self.test_labels)
 
     def get_classifier(self):
+        """
+        Must return a classifier which implements the fit(data, labels) and predict(data) methods.
+        """
         raise NotImplementedError()
 
     def get_classifier_for_grid_search(self):
+        """
+        Must return a classifier as for get_classifier but this one doesn't need any specific parameters, as they will
+        be searched.
+        """
         raise NotImplementedError()
 
     def get_grid_search_parameters(self):
@@ -80,8 +98,16 @@ class BaseClassifier:
         print(f"F1-score macro: {self.macro_f1(predictions)}")
         # print(classification_report(self.test_labels, predictions))
 
-    def jaccard_index(self, y_pred):
-        return jaccard_score(self.test_labels, y_pred, average='micro')
+    def jaccard_index(self, predictions):
+        assert len(self.test_labels) == len(predictions)
+        jaccard_score = 0.0
+        for pred_ind in range(len(predictions)):
+            y_true = self.test_labels[pred_ind]
+            y_pred = predictions[pred_ind]
+            intersection_size = sum(1 if y_pred[i] == y_true[i] == 1 else 0 for i in range(len(y_pred)))
+            union_size = sum(1 if (y_pred[i] == 1) or (y_true[i] == 1) else 0 for i in range(len(y_pred)))
+            jaccard_score += intersection_size / (union_size * len(self.test_labels))
+        return jaccard_score
 
     def micro_f1(self, y_pred):
         return f1_score(self.test_labels, y_pred, average='micro')
@@ -98,5 +124,5 @@ class BaseClassifier:
         tweets, emotions = dataset
         data_pipeline = ProcessingPipeline.standard_pipeline(tweets)
         data_pipeline.process()
-        data_pipeline.embed()
+        data_pipeline.get_feature_vector()
         return data_pipeline.embeddings, emotions

@@ -1,9 +1,11 @@
-import numpy as np
 import pandas as pd
 from defs import TRAIN_SET_PATH, TEST_SET_PATH, DEV_SET_PATH
 
 
 class DatasetLoader:
+    """
+    Use this class' static methods to load the twitter datasets.
+    """
 
     @staticmethod
     def load_training_set():

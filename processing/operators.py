@@ -11,6 +11,10 @@ from nltk import pos_tag as pos_tagger
 from nltk.stem import WordNetLemmatizer
 from nltk import ne_chunk
 
+"""
+In this file you will find all the available operators for data pre-processing.
+"""
+
 UNKNOWN_TOKEN = "UNK"
 tokenizer = TweetTokenizer()
 lemmatizer = WordNetLemmatizer()
@@ -18,7 +22,10 @@ stop_words = list(np.loadtxt(STOP_WORDS_FILE_PATH, dtype=str))
 
 
 def demojize(tweet: str) -> str:
-    return emoji.demojize(tweet)  # transforms unicode emojis to strings like :smiley_face:
+    """
+    Transforms unicode emojis to strings like :smiley_face:
+    """
+    return emoji.demojize(tweet)
 
 
 def to_lowercase(tweet_tokens: List[str]) -> List[str]:
@@ -26,14 +33,23 @@ def to_lowercase(tweet_tokens: List[str]) -> List[str]:
 
 
 def substitute_numbers(tweet_tokens: List[str]) -> List[str]:
+    """
+    Replace all numbers with token "NUM".
+    """
     return list(re.sub(r'\d+', 'NUM', tweet) for tweet in tweet_tokens)
 
 
-def substitute_punctuation(tweet_tokens: List[str]) -> List[str]:
+def remove_punctuation(tweet_tokens: List[str]) -> List[str]:
+    """
+    Remove all punctuation tokens.
+    """
     return list(token for token in tweet_tokens if token not in string.punctuation)
 
 
 def tokenize(tweet: str) -> List[str]:
+    """
+    Transforms a plain string tweet into a list of tokens.
+    """
     return tokenizer.tokenize(tweet)
 
 
@@ -41,7 +57,7 @@ def remove_stop_words(tweet_tokens: List[str]) -> List[str]:
     return [word for word in tweet_tokens if word not in stop_words]
 
 
-def pos_tag(tweet_tokens: List[str]) -> List[List[str]]:
+def pos_tagging(tweet_tokens: List[str]) -> List[List[str]]:
     return pos_tagger(tweet_tokens)
 
 
@@ -64,8 +80,22 @@ def name_entity_recognition(tweet_tokens: List[List[str]]) -> List[str]:
 
 
 def flatten(tweet_tokens_tagged: List[List[str]]) -> List[str]:
+    """
+    Removes POS tags (or any tags associated with tokens).
+    """
     return list(tweet_token_tagged[0] for tweet_token_tagged in tweet_tokens_tagged)
 
 
 def substitute_tweeter_usernames(tweet_tokens: List[str]) -> List[str]:
-    return list("tweeter_token" if token[0] == "@" else token for token in tweet_tokens)
+    """
+    Substitutes tweeter usernames with the token "USERNAME_TOKEN".
+    """
+    return list("USERNAME_TOKEN" if token[0] == "@" else token for token in tweet_tokens)
+
+
+def substitute_underscores(tweet: str) -> str:
+    return re.sub(r'(.)_(.)', r'\g<1> \g<2>', tweet)
+
+
+def strip_hashtags(tweet_tokens: List[str]) -> List[str]:
+    return list(token[1:] if (len(token) > 1) and (token[0] == "#") else token for token in tweet_tokens)
