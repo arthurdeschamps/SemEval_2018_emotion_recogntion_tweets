@@ -19,7 +19,7 @@ def create_term_dict(dataset: List[List[str]] = None, min_occurrences=4):
     :min_occurrences Minimum number of occurrences for a word to be saved in the vocabulary.
     """
     with open(VOCABULARY_FILE_PATH, "w") as f:
-        voc = _extract_vocabulary(DatasetLoader.load_training_set() if dataset is None else dataset)
+        voc = _extract_vocabulary(DatasetLoader.load_training_set()[0] if dataset is None else dataset)
         for word, occ in voc:
             if occ > min_occurrences:
                 f.write(f"{word}\n")
@@ -32,5 +32,5 @@ def _extract_vocabulary(df):
     return list((k, v) for k, v in sorted(pipeline.vocabulary.items(), key=lambda item: -item[1]))
 
 
-# extract_vocabulary(TRAIN_SET_PATH)
+create_term_dict()
 # extract_vocabulary_frequencies()
